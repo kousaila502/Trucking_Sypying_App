@@ -1,10 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <application
         android:label="trucking_spying_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data android:name="com.google.android.geo.API_KEY"
-               android:value="${GOOGLE_MAPS_API_KEY}"/>
+               android:value="AIzaSyDhLQ2SEVpUOXDlhBNUcQ1y5hV7m5dGH6k"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

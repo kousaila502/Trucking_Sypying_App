@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class SpyingScreen extends StatefulWidget {
   @override
@@ -8,23 +8,12 @@ class SpyingScreen extends StatefulWidget {
 }
 
 class _SpyingScreenState extends State<SpyingScreen> {
-  late Future<String> _response;
-
-  // Define a method to fetch coordinates from a server
-  Future<String> fetchCoordinates() async {
-    final response = await http.get(Uri.parse('http://web-production-39ae.up.railway.app/api/gps/'));
-
-    if (response.statusCode == 200) {
-      return response.body;
+  Future<void> _makePhoneCall(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
     } else {
-      throw Exception('Failed to load coordinates from server');
+      throw 'Could not launch $url';
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _response = fetchCoordinates(); // Fetch coordinates when the widget is initialized
   }
 
   @override
@@ -33,17 +22,16 @@ class _SpyingScreenState extends State<SpyingScreen> {
       appBar: AppBar(
         title: Text('Spying'),
       ),
-      body: FutureBuilder<String>(
-        future: _response,
-        builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-          if (snapshot.hasData) {
-            return Text(snapshot.data ?? ''); // Display the response
-          } else if (snapshot.hasError) {
-            return Text('${snapshot.error}');
-          }
-          // By default, show a loading spinner.
-          return CircularProgressIndicator();
-        },
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+               onPressed: () => launchUrlString("tel://+213665947813"),
+              child: Text('Start call'),
+            ),
+          ],
+        ),
       ),
     );
   }
