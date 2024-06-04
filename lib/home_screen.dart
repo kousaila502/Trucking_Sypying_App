@@ -26,7 +26,7 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                _buildCard(context, 'Trucking', 'trucking', TruckingScreen()),
+                _buildCard(context, 'Trucking', 'tracking', TruckingScreen()),
                 SizedBox(height: 20),
                 _buildCard(context, 'Spying', 'spying', SpyingScreen()),
               ],

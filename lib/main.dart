@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trucking_spying_app/home_screen.dart';
+import 'package:trucking_spying_app/splash_screen.dart';
 
 void main() async {
   //await dotenv.load();
@@ -10,7 +10,7 @@ class TruckingAndSpyingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Trucking and Spying App',
+      title: 'TransitTracer',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white, 
@@ -22,7 +22,7 @@ class TruckingAndSpyingApp extends StatelessWidget {
           ),
         ),
       ),
-      home: HomeScreen(),
+      home: SplashScreen(),
     );
   }
 }
