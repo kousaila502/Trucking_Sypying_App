@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
@@ -17,8 +18,7 @@ class _TruckingScreenState extends State<TruckingScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _showStats = false;
-  bool _showCalendar =
-      false; // new variable to control the visibility of the calendar
+  bool _showCalendar = false;
   BitmapDescriptor? _carIcon;
   List<Color> _journeyColors = [
     Colors.red,
@@ -26,9 +26,8 @@ class _TruckingScreenState extends State<TruckingScreen> {
     Colors.blue,
     Colors.yellow,
     Colors.purple
-  ]; // add more colors if needed
+  ];
 
-  // Define a method to fetch journeys from a server
   Future<List<dynamic>> fetchJourneys() async {
     final response = await http.get(Uri.parse(
         'http://spying-adruino-production.up.railway.app/api/journey/'));
@@ -40,7 +39,6 @@ class _TruckingScreenState extends State<TruckingScreen> {
     }
   }
 
-  // Define a method to fetch coordinates from a journey
   List<LatLng> fetchCoordinates(dynamic journey) {
     return journey['gps_points']
         .map<LatLng>((item) => LatLng(
@@ -51,8 +49,7 @@ class _TruckingScreenState extends State<TruckingScreen> {
   @override
   void initState() {
     super.initState();
-    _journeys =
-        fetchJourneys(); // Fetch journeys when the widget is initialized
+    _journeys = fetchJourneys();
     rootBundle.load('images/car_icon.png').then((byteData) {
       _carIcon = BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
     });
@@ -62,14 +59,22 @@ class _TruckingScreenState extends State<TruckingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Trucking'),
+        title: Text(
+          'Tracking',
+          style: GoogleFonts.pacifico(
+            textStyle: TextStyle(
+              color: Colors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.calendar_today),
             onPressed: () {
               setState(() {
-                _showCalendar =
-                    !_showCalendar; // toggle the visibility of the calendar
+                _showCalendar = !_showCalendar;
               });
             },
           ),
@@ -77,7 +82,7 @@ class _TruckingScreenState extends State<TruckingScreen> {
             icon: Icon(Icons.bar_chart),
             onPressed: () {
               setState(() {
-                _showStats = !_showStats; // toggle the visibility of the stats
+                _showStats = !_showStats;
               });
             },
           ),
@@ -89,7 +94,7 @@ class _TruckingScreenState extends State<TruckingScreen> {
           if (snapshot.hasData) {
             return Column(
               children: [
-                if (_showCalendar) // only show the calendar if _showCalendar is true
+                if (_showCalendar)
                   TableCalendar(
                     firstDay: DateTime.utc(2010, 10, 16),
                     lastDay: DateTime.utc(2030, 3, 14),
@@ -107,38 +112,43 @@ class _TruckingScreenState extends State<TruckingScreen> {
                       setState(() {
                         _selectedDay = selectedDay;
                         _focusedDay = focusedDay;
-                        _journeysCoordinates = snapshot.data!
-                            .where((journey) {
-                              DateTime journeyDate =
-                                  DateTime.parse(journey['start_time']);
-                              return journeyDate.day == selectedDay.day &&
-                                  journeyDate.month == selectedDay.month &&
-                                  journeyDate.year == selectedDay.year;
-                            })
-                            .map((journey) => fetchCoordinates(journey))
-                            .toList();
-                        _showCalendar = false;
+                        _journeys = fetchJourneys().then((journeys) {
+                          var filteredJourneys = journeys.where((journey) {
+                            DateTime journeyDate =
+                                DateTime.parse(journey['start_time']);
+                            return journeyDate.day == selectedDay.day &&
+                                journeyDate.month == selectedDay.month &&
+                                journeyDate.year == selectedDay.year;
+                          }).toList();
 
-                        if (_journeysCoordinates.isEmpty) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('No Journey Data'),
-                                content:
-                                    Text('No journey data for selected day'),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: Text('OK'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        }
+                          // Update _journeysCoordinates with the filtered journeys
+                          _journeysCoordinates =
+                              filteredJourneys.map(fetchCoordinates).toList();
+
+                          if (_journeysCoordinates.isEmpty) {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('No Journey Data'),
+                                  content:
+                                      Text('No journey data for selected day'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      child: Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+
+                          return filteredJourneys;
+                        });
+                        _showCalendar = false;
                       });
                     },
                   ),
@@ -147,8 +157,7 @@ class _TruckingScreenState extends State<TruckingScreen> {
                     initialCameraPosition: CameraPosition(
                       target: _journeysCoordinates.isNotEmpty
                           ? _journeysCoordinates.first.first
-                          : LatLng(35.709370,
-                              -0.656810), // default to (0, 0) if _coordinates is empty
+                          : LatLng(35.709370, -0.656810),
                       zoom: 8,
                     ),
                     polylines: _buildPolylines(),
@@ -156,7 +165,9 @@ class _TruckingScreenState extends State<TruckingScreen> {
                     markers: _buildMarkers(),
                   ),
                 ),
-                if (_showStats) // only show the stats if _showStats is true
+                if (_showStats &&
+                    _selectedDay != null &&
+                    _journeysCoordinates.isNotEmpty)
                   Expanded(
                     child: ListView.builder(
                       itemCount: snapshot.data!.length,
@@ -167,15 +178,11 @@ class _TruckingScreenState extends State<TruckingScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               CircleAvatar(
-                                radius:
-                                    10, // adjust this value to change the size of the CircleAvatar
-                                backgroundColor: _journeyColors[index %
-                                    _journeyColors
-                                        .length], // Use the color corresponding to the journey
+                                radius: 10,
+                                backgroundColor: _journeyColors[
+                                    index % _journeyColors.length],
                               ),
-                              SizedBox(
-                                  width:
-                                      10), // add some space between the CircleAvatar and the title
+                              SizedBox(width: 10),
                               Expanded(
                                 child: ListTile(
                                   title: Text('Journey ${index + 1}'),
@@ -205,7 +212,6 @@ class _TruckingScreenState extends State<TruckingScreen> {
           } else if (snapshot.hasError) {
             return Text('${snapshot.error}');
           }
-          // By default, show a loading spinner.
           return Center(
             child: CircularProgressIndicator(),
           );
@@ -214,14 +220,8 @@ class _TruckingScreenState extends State<TruckingScreen> {
     );
   }
 
-  // Method to build polylines for each journey
   Set<Polyline> _buildPolylines() {
-    List<Color> colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.red,
-      Colors.orange
-    ]; // Add more colors as needed
+    List<Color> colors = [Colors.blue, Colors.green, Colors.red, Colors.orange];
     Set<Polyline> polylines = {};
     for (int i = 0; i < _journeysCoordinates.length; i++) {
       polylines.add(
@@ -235,14 +235,8 @@ class _TruckingScreenState extends State<TruckingScreen> {
     return polylines;
   }
 
-  // Method to build circles for each journey
   Set<Circle> _buildCircles() {
-    List<Color> colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.red,
-      Colors.orange
-    ]; // Add more colors as needed
+    List<Color> colors = [Colors.blue, Colors.green, Colors.red, Colors.orange];
     Set<Circle> circles = {};
     for (int i = 0; i < _journeysCoordinates.length; i++) {
       for (int j = 0; j < _journeysCoordinates[i].length - 1; j++) {
@@ -251,10 +245,9 @@ class _TruckingScreenState extends State<TruckingScreen> {
             circleId: CircleId(
                 '${_journeysCoordinates[i][j].latitude},${_journeysCoordinates[i][j].longitude}'),
             center: _journeysCoordinates[i][j],
-            radius: 7, // adjust the radius as needed
+            radius: 7,
             fillColor: colors[i % colors.length].withOpacity(0.5),
-            strokeColor: colors[i % colors.length]
-                .withOpacity(0.8), // make the border semi-transparent
+            strokeColor: colors[i % colors.length].withOpacity(0.8),
             strokeWidth: 10,
           ),
         );
@@ -263,7 +256,6 @@ class _TruckingScreenState extends State<TruckingScreen> {
     return circles;
   }
 
-  // Method to build markers for the last point of each journey
   Set<Marker> _buildMarkers() {
     Set<Marker> markers = {};
     for (int i = 0; i < _journeysCoordinates.length; i++) {

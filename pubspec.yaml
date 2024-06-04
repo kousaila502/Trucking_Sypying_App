@@ -40,6 +40,7 @@ dependencies:
   flutter_dotenv: ^5.1.0
   table_calendar: ^3.0.3
   url_launcher: ^6.0.16  
+  google_fonts: ^4.0.4
   
 dev_dependencies:
   flutter_test:
@@ -60,7 +61,10 @@ flutter:
   uses-material-design: true
   assets:
     - images/car_icon.png
-
+  fonts:
+    - family: Pacifico
+      fonts:
+        - asset: fonts/Pacifico-Regular.ttf
 
 
   
