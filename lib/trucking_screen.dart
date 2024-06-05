@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +28,8 @@ class _TruckingScreenState extends State<TruckingScreen> {
     Colors.yellow,
     Colors.purple
   ];
+  GoogleMapController? _googleMapController;
+  Timer? _timer;
 
   Future<List<dynamic>> fetchJourneys() async {
     final response = await http.get(Uri.parse(
@@ -53,7 +56,34 @@ class _TruckingScreenState extends State<TruckingScreen> {
     rootBundle.load('images/car_icon.png').then((byteData) {
       _carIcon = BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
     });
+    _timer =
+        Timer.periodic(Duration(seconds: 15), (Timer t) => _updateJourneys());
   }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _updateJourneys() {
+  fetchJourneys().then((journeys) {
+    var filteredJourneys = journeys;
+    if (_selectedDay != null) {
+      filteredJourneys = journeys.where((journey) {
+        DateTime journeyDate = DateTime.parse(journey['start_time']);
+        return journeyDate.day == _selectedDay!.day &&
+            journeyDate.month == _selectedDay!.month &&
+            journeyDate.year == _selectedDay!.year;
+      }).toList();
+    }
+
+    setState(() {
+      _journeys = Future.value(filteredJourneys);
+      _journeysCoordinates = filteredJourneys.map(fetchCoordinates).toList();
+    });
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +142,7 @@ class _TruckingScreenState extends State<TruckingScreen> {
                       setState(() {
                         _selectedDay = selectedDay;
                         _focusedDay = focusedDay;
-                        _journeys = fetchJourneys().then((journeys) {
+                        fetchJourneys().then((journeys) {
                           var filteredJourneys = journeys.where((journey) {
                             DateTime journeyDate =
                                 DateTime.parse(journey['start_time']);
@@ -125,7 +155,12 @@ class _TruckingScreenState extends State<TruckingScreen> {
                           _journeysCoordinates =
                               filteredJourneys.map(fetchCoordinates).toList();
 
-                          if (_journeysCoordinates.isEmpty) {
+                          if (_journeysCoordinates.isNotEmpty) {
+                            var bounds = _calculateBounds(_journeysCoordinates);
+                            var cameraUpdate =
+                                CameraUpdate.newLatLngBounds(bounds, 50);
+                            _googleMapController?.animateCamera(cameraUpdate);
+                          } else {
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -146,7 +181,8 @@ class _TruckingScreenState extends State<TruckingScreen> {
                             );
                           }
 
-                          return filteredJourneys;
+                          // Update _journeys with the filtered journeys
+                          _journeys = Future.value(filteredJourneys);
                         });
                         _showCalendar = false;
                       });
@@ -154,6 +190,9 @@ class _TruckingScreenState extends State<TruckingScreen> {
                   ),
                 Expanded(
                   child: GoogleMap(
+                    onMapCreated: (GoogleMapController controller) {
+                      _googleMapController = controller;
+                    },
                     initialCameraPosition: CameraPosition(
                       target: _journeysCoordinates.isNotEmpty
                           ? _journeysCoordinates.first.first
@@ -271,5 +310,20 @@ class _TruckingScreenState extends State<TruckingScreen> {
       }
     }
     return markers;
+  }
+
+  LatLngBounds _calculateBounds(List<List<LatLng>> journeysCoordinates) {
+    double x0, x1, y0, y1;
+    x0 = x1 = journeysCoordinates[0][0].latitude;
+    y0 = y1 = journeysCoordinates[0][0].longitude;
+    for (var journey in journeysCoordinates) {
+      for (var point in journey) {
+        if (point.latitude < x0) x0 = point.latitude;
+        if (point.latitude > x1) x1 = point.latitude;
+        if (point.longitude < y0) y0 = point.longitude;
+        if (point.longitude > y1) y1 = point.longitude;
+      }
+    }
+    return LatLngBounds(northeast: LatLng(x1, y1), southwest: LatLng(x0, y0));
   }
 }

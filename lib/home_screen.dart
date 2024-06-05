@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trucking_spying_app/current_postion.dart';
 import 'package:trucking_spying_app/spying_screen.dart';
 import 'package:trucking_spying_app/trucking_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,8 +28,10 @@ class HomeScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 _buildCard(context, 'Trucking', 'tracking', TruckingScreen()),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 _buildCard(context, 'Spying', 'spying', SpyingScreen()),
+                const SizedBox(height: 20),
+                _buildCard(context, 'Current Position', 'current position', LastPositionScreen()),
               ],
             ),
           ),
